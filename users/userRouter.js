@@ -1,5 +1,5 @@
 const express = require("express");
-const users = require("./userDb");
+const userDb = require("./userDb");
 const posts = require("../posts/postDb");
 const router = express.Router();
 
@@ -19,7 +19,7 @@ function validateUser(req, res, next) {
 //Validate User by Id middleware
 
 function validateUserId(req, res, next) {
- users
+    userDb
    .getById(req.params.id)
    .then(user => {
      if (user) {
@@ -32,7 +32,7 @@ function validateUserId(req, res, next) {
    .catch(error => {
      res.status(500).json({
        message:
-         "Something terrible happend while checking user id: " + error.message
+         `Something terrible happend while checking user id: ${error.message}`
      });
    });
 }
@@ -50,7 +50,7 @@ function validatePost(req, res, next) {
 }
 //endpoint for adding a new user
 router.post("/", validateUser, (req, res) => {
- users
+    userDb
    .insert(req.body)
    .then(user => {
      res.status(201).json(user);
@@ -71,25 +71,23 @@ router.post("/:id/posts", validateUserId, validatePost, (req, res) => {
    .then(post => {
      res.status(201).json(post);
    })
-   .catch(err => {
+   .catch(error => {
      res.status(500).json({
-       error: "we encountered an error while creating this post for the user"
+       error: `we encountered an error while creating this post for the user: ${error.message}`
      });
    });
 });
 
 //Endpoint for getting all users
 router.get("/", (req, res) => {
- users
+    userDb
    .get(req.query)
    .then(post => {
      res.status(200).json(post);
    })
    .catch(error => {
-     // log error to server
-     console.log(error);
      res.status(500).json({
-       message: "Error retrieving the hubs"
+       message: `Error retrieving the list of all users: ${error.message}`
      });
    });
 });
@@ -99,22 +97,22 @@ router.get("/:id", validateUserId, (req, res) => {
  res.json(req.user);
 });
 router.get("/:id/posts", validateUserId, (req, res) => {
- users
+    userDb
    .getUserPosts(req.params.id)
    .then(posts => {
      res.status(200).json(posts);
    })
-   .catch(() => {
+   .catch(error => {
      res.status(500).json({
        message:
-         "encountered an error while retrieving the posts for the specified user"
+         `encountered an error while retrieving the posts for the specified user ${error.message}`
      });
    });
 });
 
 //Endpoint for deleting a user
 router.delete("/:id", validateUserId, (req, res) => {
- users
+    userDb
    .remove(req.user.id)
    .then(() => {
      res.status(200).json({ message: "This user has been deleted" });
@@ -128,16 +126,16 @@ router.delete("/:id", validateUserId, (req, res) => {
 
 //endpoint for updating a user
 router.put("/:id", validateUserId, (req, res) => {
- users
+    userDb
    .update(req.user.id, req.body)
-   .then(user => {
+   .then(error => {
      res.status(200).json({
-       message: "You have just changed his destiny"
+       message: `You have successfully updated the specified user ${error.message}`
      });
    })
    .catch(error => {
      res.status(500).json({
-       message: "Error updating the user: " + error.message
+       message: `Error updating the user:  ${error.message}`
      });
    });
 });
