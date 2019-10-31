@@ -4,12 +4,9 @@
   "description": "Web API Blog Project",
   "main": "index.js",
   "scripts": {
+    "server": "nodemon index.js",
     "start": "node index.js"
-  },
-  "engine": {
-    "node": "10.16.3",
-    "version": "6.9.0"
-  },
+  },  
   "repository": {
     "type": "git",
     "url": "git+https://github.com/LambdaSchool/Node-Blog.git"
