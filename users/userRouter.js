@@ -64,7 +64,10 @@ router.post("/", validateUser, (req, res) => {
 //Endpoint for add a post to a unique user
 router.post("/:id/posts", validateUserId, validatePost, (req, res) => {
   let { id } = req.params;
-  let postBody = { ...req.body, user_id: id };
+  const textName = req.body.text
+  console.log("text value is", req.body.text);
+
+  let postBody = { text:textName, user_id: id };
   postDb
     .insert(postBody)
     .then(post => {
