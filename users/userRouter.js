@@ -56,7 +56,7 @@ router.post("/", validateUser, (req, res) => {
     })
     .catch(error => {
       res.status(500).json({
-        message: "Error adding the user: " + error.message
+        message: `Error adding the user: ${error.message}`
       });
     });
 });
@@ -76,6 +76,23 @@ router.post("/:id/posts", validateUserId, validatePost, (req, res) => {
       });
     });
 });
+
+//Endpoint for getting post on a specified user
+router.get("/:id/posts", validateUserId, (req, res) => {
+    userDb.getUserPosts(req.user.id)
+      .then(posts => {
+        if (!posts.length) {
+          res.status(404).json({ message: "No posts found" });
+        } else {
+          res.status(200).json({ posts });
+        }
+      })
+      .catch(error => {
+        res.status(500).json({
+          errorMessage: "Server error: " + error
+        });
+      });
+  });
 
 //Endpoint for getting all users
 router.get("/", (req, res) => {
