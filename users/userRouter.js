@@ -1,112 +1,144 @@
 const express = require("express");
 const users = require("./userDb");
+const posts = require("../posts/postDb");
 const router = express.Router();
-//custom middleware
+
+//Validate user middleware
+
 function validateUser(req, res, next) {
-  let user = req.body;
-  if (!user) {
-    res.status(400).json({ message: "missing user data" });
-  } else if (!user.name) {
-    res.status(400).json({ message: "missing required name field" });
-  } else {
-    next();
-  }
+ let user = req.body;
+ if (!user) {
+   res.status(400).json({ message: "missing user data" });
+ } else if (!user.name) {
+   res.status(400).json({ message: "missing required name field" });
+ } else {
+   next();
+ }
 }
+
+//Validate User by Id middleware
+
 function validateUserId(req, res, next) {
-  users
-    .getById(req.params.id)
-    .then(user => {
-      if (user) {
-        req.user = user;
-        next();
-      } else {
-        res.status(400).json({ message: "invalid user id" });
-      }
-    })
-    .catch(error => {
-      res.status(500).json({
-        message:
-          "Something terrible happend while checking user id: " + error.message
-      });
-    });
+ users
+   .getById(req.params.id)
+   .then(user => {
+     if (user) {
+       req.user = user;
+       next();
+     } else {
+       res.status(400).json({ message: "invalid user id" });
+     }
+   })
+   .catch(error => {
+     res.status(500).json({
+       message:
+         "Something terrible happend while checking user id: " + error.message
+     });
+   });
 }
+
+//Validate Post middleware
 function validatePost(req, res, next) {
-  let post = req.body;
-  if (!post) {
-    res.status(400).json({ message: "missing post data" });
-  } else if (!post.text) {
-    res.status(400).json({ message: "missing required text field" });
-  } else {
-    next();
-  }
+ let post = req.body;
+ if (!post) {
+   res.status(400).json({ message: "missing post data" });
+ } else if (!post.text) {
+   res.status(400).json({ message: "missing required text field" });
+ } else {
+   next();
+ }
 }
-//implement here
+//endpoint for adding a new user
 router.post("/", validateUser, (req, res) => {
-  users
-    .insert(req.body)
-    .then(user => {
-      res.status(201).json(user);
-    })
-    .catch(error => {
-      // log error to server
-      console.log(error);
-      res.status(500).json({
-        message: "Error adding the user: " + error.message
-      });
-    });
+ users
+   .insert(req.body)
+   .then(user => {
+     res.status(201).json(user);
+   })
+   .catch(error => {
+     res.status(500).json({
+       message: "Error adding the user: " + error.message
+     });
+   });
 });
 
-// add post to a unique user
-router.post("/:id/posts", validateUserId, (req, res) => {
+//Endpoint for add a post to a unique user
+router.post("/:id/posts", validateUserId, validatePost, (req, res) => {
+ let { id } = req.params;
+ let postBody = { ...req.body, user_id: id };
+ posts
+   .insert(postBody)
+   .then(post => {
+     res.status(201).json(post);
+   })
+   .catch(err => {
+     res.status(500).json({
+       error: "we encountered an error while creating this post for the user"
+     });
+   });
 });
 
-// get all users
+//Endpoint for getting all users
 router.get("/", (req, res) => {
-  users
-    .get(req.query)
-    .then(post => {
-      res.status(200).json(post);
-    })
-    .catch(error => {
-      // log error to server
-      console.log(error);
-      res.status(500).json({
-        message: "Error retrieving the hubs"
-      });
-    });
+ users
+   .get(req.query)
+   .then(post => {
+     res.status(200).json(post);
+   })
+   .catch(error => {
+     // log error to server
+     console.log(error);
+     res.status(500).json({
+       message: "Error retrieving the hubs"
+     });
+   });
 });
+
+//Endpoint for getting a user by his/her id
 router.get("/:id", validateUserId, (req, res) => {
-  res.json(req.user);
+ res.json(req.user);
 });
-// router.get("/:id/posts", (req, res) => {});
+router.get("/:id/posts", validateUserId, (req, res) => {
+ users
+   .getUserPosts(req.params.id)
+   .then(posts => {
+     res.status(200).json(posts);
+   })
+   .catch(() => {
+     res.status(500).json({
+       message:
+         "encountered an error while retrieving the posts for the specified user"
+     });
+   });
+});
 
-//Delete a user (by id)
+//Endpoint for deleting a user
 router.delete("/:id", validateUserId, (req, res) => {
-  users
-    .remove(req.user.id)
-    .then(() => {
-      res.status(200).json({ message: "This user has been deleted" });
-    })
-    .catch(error => {
-      res.status(500).json({
-        message: `Error deleting the user: ${error.message}`
-      });
-    });
+ users
+   .remove(req.user.id)
+   .then(() => {
+     res.status(200).json({ message: "This user has been deleted" });
+   })
+   .catch(error => {
+     res.status(500).json({
+       message: `Error deleting the user: ${error.message}`
+     });
+   });
 });
 
-// Update user by id
+//endpoint for updating a user
 router.put("/:id", validateUserId, (req, res) => {
-  users
-    .update(req.user.id, req.body)
-    .then(() => {
-      res.status(200).json({
-        message: "You have just changed his destiny"
-      });
-    })
-    .catch(error => {
-      res.status(500).json({
-        message: "Error updating the user: " + error.message
-      });
-    });
+ users
+   .update(req.user.id, req.body)
+   .then(user => {
+     res.status(200).json({
+       message: "You have just changed his destiny"
+     });
+   })
+   .catch(error => {
+     res.status(500).json({
+       message: "Error updating the user: " + error.message
+     });
+   });
 });
 module.exports = router;
